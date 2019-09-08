@@ -1,0 +1,102 @@
+---
+title: "NYC Uber Pickups based on Weather and Holidays"
+author: "Lohannes"
+date: "7/12/2019"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+    
+---
+
+# Introduction
+
+Observation dataset of Uber pickup volumes in New York City based on weather levels and holiday in NYC. This dataset published on [Kaggle] (https://www.kaggle.com/yannisp/uber-pickups-enriched), This dataset contains data on the pick-up or traffic collection volume in the Uber ride hailing application, related to holiday variables and weather variables at the time of the study.
+
+## Data Glossary
+
+Before entering the explanatory data section, it is necessary to first check the type of data available in the dataset, use the read.csv function to import data, the strength function to read all types of variables in the dataset, and the levels in borough variables to know 6 districts examined in the dataset that is.
+
+```{r}
+Order_volume <- read.csv("uber_nyc_enriched.csv")
+str(Order_volume)
+levels(Order_volume$borough)
+```
+
+The following is the glossary of the data:
+
+- pickup_dt: Time period of the uber pickup customer in new york city.
+
+- borough: Area or District in New York City, there is have 6 distrcit: Bronx, Brooklyn, EWR, Manhattan, Queens, Staten Island
+
+- pickups: Number of pickups for the period in new york city.
+
+- spd: Wind speed in miles/hour in new york city.
+
+- vsb: Visibility in Miles to nearest tenth in new york city.
+
+- temp: temperature in Fahrenheit in new york city.
+
+- dewp: Dew point in Fahrenheit in new york city.
+
+- slp: Sea level pressure in new york city.
+
+- pcp01: 1-hour liquid precipitation.
+
+- pcp06: 6-hour liquid precipitation in new york city.
+
+- pcp24: 24-hour liquid precipitation in new york city.
+
+- sd: Snow depth in inches on new york city.
+
+- hday: Being in a holiday in new york city, Y for being holiday, or N for not.
+
+## Data Explanatory
+
+### Change Variable pickup_dt from factor to date:
+One of the steps to clean up the dataset is to replace the pickup_dt variable type or pickup transaction date, which was previously a type of factor to be the date type, with the arrangement of the month / day / year
+```{r}
+library(lubridate)
+Order_volume$pickup_dt <- ydm_hms(Order_volume$pickup_dt)
+str(Order_volume$pickup_dt)
+```
+
+### Add Variable day (pickups_day), month(pickups_month), and year(pickup_year) in other column
+Add variable day (pickup_day), month variable (pickup_month) and year (pickup_year) so that the observed dataset can be clearer and easier to display other studies
+```{r}
+Order_volume$pickup_day <- wday(Order_volume$pickup_dt, label = T, abbr = F)
+Order_volume$pickup_month <- month(Order_volume$pickup_dt, label = T, abbr = F)
+Order_volume$pickup_year <- year(Order_volume$pickup_dt)
+head(Order_volume)
+```
+
+
+### Modus in pickups variable
+search for the mode or the largest number of transactions that exist in the dataset, regarding the highest number of pickups reached, related to the city and the date. The results obtained from the dataset recorded 7883 pickups at one time in Manhattan, as the highest number of pickups with a ratio of 29101 observations.
+```{r}
+modus_pickups <- max(Order_volume$pickups)
+modus_pickups
+
+modus_district <- Order_volume[Order_volume$pickups == 7883,]
+modus_district
+```
+
+### Pickup that exceeds 500 and the proportion of district
+look for the number of pickup orders that have a quantity above 500 pickups, and look for the proportion of districts that get orders above 500. And the results of 6582 total pickup conditions were obtained at different times and districts that had pickup numbers above 500 of the total 29101 observations held.
+```{r}
+#Proportion pickup exceeds 500
+Order_over_500 <- Order_volume[Order_volume$pickups > 500,]
+table(Order_over_500$borough)
+
+District_over_500 <- Order_volume[Order_volume$pickups >= 500,]
+head(District_over_500)
+```
+
+### look for outlier values on the number of pickups
+of 29101 observations there are many outliers in the dataset, shown in the boxplot graph below, with the number of pickups exceeding the upper limit quantity.
+```{r}
+boxplot(Order_volume$pickups)
+```
+
+
+

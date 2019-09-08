@@ -1,0 +1,171 @@
+---
+title: "Zomato on Bangalore"
+author: "Lohannes"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+    df_print: paged
+    
+---
+# Introduction
+
+This dataset was taken from the dataset available on the Kaggle website, posted by Himanshu Poddar in April 2019 under the title "Zomato Bangalore Restaurant". (https://www.kaggle.com/himanshupoddar/zomato-bangalore-restaurants)
+
+The basic idea for analyzing the Zomato dataset is to get about the factors that influence the formation of various types of restaurants in various places in Bengaluru and the aggregate ranking of each restaurant. Bengaluru is one of the cities that has more than 12,000 restaurants with restaurants serving dishes from all over the world.
+
+With the opening of new restaurants every day, the industry is not saturated and demand is increasing day by day. Although demand is increasing, it is difficult for new restaurants to compete with established restaurants. Most of them serve the same food.
+
+Bengaluru is the IT capital of India. Most people here depend mainly on food in the restaurant because they don't have time to cook on their own. With such a large restaurant demand, it is important to study location demographics. What kind of food is more popular in an area.
+
+## Data Glossary
+
+The data contained 17 variables with 51717 observations which were divided into URLs, names and addresses of extracted restaurants which were visible on the front page. Also for each environment and for each food category, online ordering, table booking options, rate, votes, telephone, location, type of restaurant, preferred menu, cooking menu, average price, extracted reviews. See the data glossary section for more details on variables.
+
+```{r}
+zomato <- read.csv("zomato.csv")
+str(zomato)
+```
+
+Following are the variable glossaries in the Zomato dataset:
+
+- url = contains the restaurant url on the zomato website
+
+- address = contains the address of a restaurant in Bengaluru
+
+- online_order = whether online ordering is available at a restaurant or not
+
+- book_table = table booking options available or not
+
+- rate = contains the overall restaurant rating from 1 - 5
+
+- votes = contains the total number of ratings for restaurants as of the date mentioned above
+
+- phone = contains the restaurant telephone number
+
+- location = contains the location where the restaurant is located
+
+- rest_type = restaurant type
+
+- dish_liked = dishes that many people like in restaurants
+
+- cuisines = food styles, each food separated by commas
+
+- approx_cost (for two people) = contains estimated food costs for two people
+
+- reviews_list = list of reviews for restaurants, each consisting of two ratings, ratings and reviews by customers
+
+- menu_item = contains a list of menus available in restaurants
+
+- listed_in (type) = type of food
+
+- listed_in (city) = contains the city where the restaurant is located
+
+## Data Cleaning
+
+Change some type of variable into a type that matches the following details:
+
+```{r}
+zomato$url <- as.character(zomato$url)
+zomato$address <- as.character(zomato$address)
+zomato$name <- as.character(zomato$address)
+zomato$phone <- as.integer(zomato$phone)
+zomato$dish_liked <- as.character(zomato$dish_liked)
+zomato$cuisines <- as.character(zomato$cuisines)
+zomato$approx_cost.for.two.people. <- as.numeric(zomato$approx_cost.for.two.people.)
+zomato$menu_item <- as.character(zomato$menu_item)
+```
+
+
+## Data Exploratory
+
+### 1. Install the Package
+Install libraries that are used in making plots in the research dataset Zomato, including the library ggplot, ggthemes, and ggrepel.
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(ggrepel)
+```
+
+### 2. Correlation of type of restaurant and voting
+Make observations on the variables listed in type (type of restaurant), which contains buffets, cafes, delivery, dine out, drinks & nightlife, pubs & bars, whether correlated with the level of vote or voting on the type of food in Bangalore restaurants.
+
+```{r}
+best_restaurant_vote <- zomato[zomato$votes >= 10000,]
+
+ggplot(best_restaurant_vote, mapping = aes(listed_in.type., votes))+
+  geom_col(aes(fill = listed_in.type.))+
+  labs(x = NULL, y = NULL,
+       title = "Restaurant Type and Votes Correlation")+
+  theme(legend.position = "none")+
+  coord_flip()
+```
+
+#### Insight:
+From the observations it was found that the variable "dine out" has the highest voting or voting value, this shows that people in the city of Bangalore most like to eat directly at the restaurant. so if there is a restaurant that wants to be opened, the "dine out" type of food is the most likely market share.
+
+and the results of the type of restaurant "pubs and bars" have the lowest market value or voting, this shows that not many people in the city of Bangalore who like going to the restaurant "pubs and bars", so that if you open a restaurant type pubs or bars have a market opportunity a little.
+
+
+### 3. Correlation Number of voting votes with the average price
+Make observations on the variable "approximate cost for 2 people" or the average price of food for 2 people, whether correlated with the level of vote or voting on the type of food in Bangalore restaurants.
+
+```{r}
+options(scipen = 999)
+ggplot(zomato, aes(votes, approx_cost.for.two.people.))+
+  geom_jitter()+
+  labs(y = "Mean Price for 2 People", title = "Votes and Price Correlation")+
+  coord_flip()
+```
+
+#### Insight:
+From the observation it was found that restaurants that have average food prices between 1 - 20 rupees and food prices of 60 rupees and above, have the highest voting value. this shows that people in the city of Bangalore like the type of food at a price of 1-20 for daily food or as a necessity, and like the price of 60+ as a food that has prestige value.
+
+From the above data also obtained a fairly high outlier value of the price range of 10 rupees and 70 rupees, which means there are restaurants or favorite menus at prices of 10 rupees and 70 rupees.
+
+
+### 4. Observation of 5 restaurants with the highest voting votes in Bangalore
+Observing unique variables in restaurant names, or observing 5 restaurants with the highest votes, including: Byg Brewski Brewing Company, Toit, Truffles, AB's (Absolute Barberques), and the black pearl whether correlated with the level of votes or votes, on food ratings in Bangalore restaurants, and what the average price is offered.
+
+```{r fig.height=6, fig.width=6}
+library(scales)
+zomato.u <- best_restaurant_vote[match(unique(best_restaurant_vote$name),best_restaurant_vote$name),]
+
+zomato.u$approx_cost.for.two.people. <- as.integer(zomato.u$approx_cost.for.two.people.)
+
+ggplot(zomato.u, aes(rate, votes))+
+  geom_point(aes(size = approx_cost.for.two.people., col = approx_cost.for.two.people.))+
+  geom_label_repel(aes(label = name), nudge_y = 200, hjust = "inward", size = 3) +
+  scale_color_gradient(low = "red", high = "blue") +
+  guides(size = F)+
+  labs(title = "Five Best Restaurant")+
+  theme(legend.position = "none")
+```
+
+#### Insight:
+From the observational data above, it was found that the five restaurants with the highest voting in Bangalore had high rating values, ranging from 4.7 to 4.9. besides that the four restaurants (except Truffles), have a low average price per meal (2 people) of 10-25 rupees, and the Truffles restaurant which ranks third in the voting has an average price of 65 - 70 rupees. this shows that the people of Bangalore have food that has a fairly low price (4 restaurants), or restaurants with high prestige value (1 restaurant).
+
+
+### 5. Correlation between food rating and food voting
+Observing the rating variable in restaurants in Bangalore starting from rating 4.5 to 4.9 whether it correlates with the level of voting or voting of restaurants in Bangalore.
+
+```{r}
+levels(zomato$listed_in.type.)
+
+options(scipen = 999)
+best_restaurant_rate <- zomato[zomato$rate =="4.5 /5"| 
+                            zomato$rate == "4.5/5" |zomato$rate == "4.6 /5"|
+                            zomato$rate == "4.6/5"|zomato$rate ==  "4.7 /5" |
+                            zomato$rate == "4.7/5"|zomato$rate ==  "4.8 /5"|
+                            zomato$rate == "4.8/5" |zomato$rate == "4.9 /5"|
+                            zomato$rate == "4.9/5",]
+ggplot(best_restaurant_rate, mapping = aes(rate, votes))+
+  geom_col(aes(fill = rate))+
+  labs(title = "Votes and Rate Correlation")
+```
+
+#### Insight:
+From the observation data above, it was found that the rating level did not affect the voting given to the restaurant, because the rating rating of 4.5 was the highest value in the voting conducted by the people of Bangalore in the restaurant, and the 4.8 rating was the lowest rating value obtained in restaurant voting. this shows there is no correlation if a high rating will affect voting votes that are also high.
+
